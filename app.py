@@ -72,7 +72,7 @@ def store_transactions_in_db(conn):
     coinbase_ids = db.get_coinbase_ids(conn)
     for id in coinbase_ids:
         coinbase_id_set.add(id[0])
-    
+
     for transaction in transactions['data']:
         if transaction['id'] not in coinbase_id_set:
             coinbase_id = transaction['id']
