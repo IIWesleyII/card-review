@@ -1,2 +1,4 @@
 requests
+coinbase
 python-dotenv
+psycopg2
