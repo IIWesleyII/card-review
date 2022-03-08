@@ -25,6 +25,7 @@ class CoinbaseWalletAuth(AuthBase):
             'CB-ACCESS-SIGN': signature,
             'CB-ACCESS-TIMESTAMP': timestamp,
             'CB-ACCESS-KEY': self.api_key,
+            'CB-VERSION': '2022-03-08'
         })
         return request
 
@@ -32,8 +33,18 @@ api_url = "https://api.coinbase.com/v2/"
 auth = CoinbaseWalletAuth(API_KEY, API_SECRET)
 
 
-
 # GET current user
-r = requests.get(api_url + "user", auth=auth)
-print(r.json())
+def get_user(api_url,auth):
+    r = requests.get(api_url + "user", auth=auth)
+    return r.json()
 
+
+# https://api.coinbase.com/v2/accounts
+def get_accounts(api_url,auth):
+    r = requests.get(f'{api_url}accounts', auth=auth)
+    return r.json()
+
+
+def get_auth_info(api_url,auth):
+    r = requests.get(f'{api_url}user/auth', auth=auth)
+    return r.json()
