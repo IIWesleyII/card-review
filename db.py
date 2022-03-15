@@ -1,7 +1,7 @@
-from sqlite3 import Cursor
 import psycopg2
 import os
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 load_dotenv()
 
 CREATE_TRANSACTION_TABLE = '''
@@ -16,7 +16,9 @@ SELECT_COINBASE_ID = '''
 SELECT coinbase_id FROM transaction;
 '''
 SELECT_TRANSACTIONS = '''
-SELECT * FROM transaction;
+SELECT * FROM transaction
+WHERE transaction_date between %s AND %s
+;
 '''
 
 def connect():
@@ -47,7 +49,7 @@ def add_transaction(conn,coinbase_id,transaction_type,transaction_value,transact
         cursor.close()
 
 
-def get_coinbase_ids(conn):
+def select_coinbase_ids(conn):
     with conn:
         cursor = conn.cursor()
         cursor.execute(SELECT_COINBASE_ID)
@@ -56,10 +58,17 @@ def get_coinbase_ids(conn):
         return result
 
 
-def get_transactions(conn):
+def select_transactions(conn,time_period):
     with conn:
         cursor = conn.cursor()
-        cursor.execute(SELECT_TRANSACTIONS)
+        curr_date = datetime.today()
+        # date_1 is the current date minus the time_period in days  
+        date_1 = str(curr_date + timedelta(days=-time_period))
+
+        # date_2 is current time date
+        date_2 =str(curr_date) 
+
+        cursor.execute(SELECT_TRANSACTIONS,(date_1,date_2))
         result = cursor.fetchall()
         cursor.close()
-        return result
+        return result 

@@ -66,7 +66,7 @@ def store_transactions_in_db(conn):
     transaction_value = 0.0
     transaction_date = ''
     client = create_client()
-    transactions = client.get_transactions(USDC_ACCOUNT_ID,limit=300)
+    transactions = client.select_transactions(USDC_ACCOUNT_ID,limit=300)
 
     coinbase_id_set = set()
     coinbase_ids = db.get_coinbase_ids(conn)
@@ -82,7 +82,18 @@ def store_transactions_in_db(conn):
             db.add_transaction(conn, coinbase_id, transaction_type,transaction_value,transaction_date)
 
 
+def generate_transaction_email(conn, time_period):
+
+    # need a get_transactions_by_date
+    transactions_obj = db.select_transactions(conn,time_period)
+    ammount_spent = 0.0
+    for transaction in transactions_obj:
+        if transaction[2] == 'cardspend':
+            ammount_spent += float(transaction[3])
+
+
 if __name__ == '__main__':
     conn = db.connect()
     db.create_table(conn)
-    store_transactions_in_db(conn)
+    #store_transactions_in_db(conn)
+    generate_transaction_email(conn,7)
