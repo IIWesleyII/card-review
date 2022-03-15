@@ -1,3 +1,4 @@
+from sqlite3 import Cursor
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -14,7 +15,9 @@ VALUES (%s,%s,%s,%s);
 SELECT_COINBASE_ID = '''
 SELECT coinbase_id FROM transaction;
 '''
-
+SELECT_TRANSACTIONS = '''
+SELECT * FROM transaction;
+'''
 
 def connect():
     try:
@@ -48,6 +51,15 @@ def get_coinbase_ids(conn):
     with conn:
         cursor = conn.cursor()
         cursor.execute(SELECT_COINBASE_ID)
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
+
+def get_transactions(conn):
+    with conn:
+        cursor = conn.cursor()
+        cursor.execute(SELECT_TRANSACTIONS)
         result = cursor.fetchall()
         cursor.close()
         return result
