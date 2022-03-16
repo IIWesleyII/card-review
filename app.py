@@ -87,7 +87,7 @@ def store_transactions_in_db(conn):
             transaction_date = transaction['updated_at']
             db.add_transaction(conn, coinbase_id, transaction_type,transaction_value,transaction_date)
 
-# generate a pdf report of all tranasaction on the Coinbase Debit Card between the
+# generate a pdf report of all transaction on the Coinbase Debit Card between the
 # time period passed in
 def generate_transaction_email_pdf(conn, time_period):
     transaction_obj = db.select_transactions(conn,time_period)
