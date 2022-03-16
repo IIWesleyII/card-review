@@ -4,6 +4,7 @@
 import json
 import db
 import send_email
+import schedule
 from coinbase.wallet.client import Client
 import hmac, hashlib, time, requests, os, codecs
 from requests.auth import AuthBase
@@ -126,10 +127,17 @@ def generate_transaction_email_pdf(conn, time_period):
 
     pdf.output(f"transaction_reports/TransactionReport.pdf")
 
-
-if __name__ == '__main__':
+# Driver function
+# every monday at 6am send transaction report
+def run():
     conn = db.connect()
     db.create_table(conn)
-    #store_transactions_in_db(conn)
+    store_transactions_in_db(conn)
     generate_transaction_email_pdf(conn,7)
     send_email.send_email_report()
+
+schedule.every().monday.at("06:00").do(run)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
