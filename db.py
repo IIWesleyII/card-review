@@ -61,13 +61,12 @@ def select_coinbase_ids(conn):
 def select_transactions(conn,time_period):
     with conn:
         cursor = conn.cursor()
-        curr_date = datetime.today()
+        curr_date = datetime.now()
         # date_1 is the current date minus the time_period in days  
         date_1 = str(curr_date + timedelta(days=-time_period))
 
         # date_2 is current time date
-        date_2 =str(curr_date) 
-
+        date_2 = str(curr_date) 
         cursor.execute(SELECT_TRANSACTIONS,(date_1,date_2))
         result = cursor.fetchall()
         cursor.close()

@@ -2,11 +2,14 @@
 # https://developers.coinbase.com/docs/wallet/api-key-authentication
 # https://medium.com/@samhagin/check-your-balance-on-coinbase-using-python-5641ff769f91
 import json
+import db
+import send_email
 from coinbase.wallet.client import Client
 import hmac, hashlib, time, requests, os, codecs
 from requests.auth import AuthBase
 from dotenv import load_dotenv
-import db
+from fpdf import FPDF
+from datetime import datetime
 
 load_dotenv()
 API_KEY = os.environ.get("API_KEY")
@@ -34,7 +37,7 @@ class CoinbaseWalletAuth(AuthBase):
 api_url = "https://api.coinbase.com/v2/"
 auth = CoinbaseWalletAuth(API_KEY, API_SECRET)
 
-
+# Create coinbaseClient Object, has helpful functions like: client.select_transactions(...)
 def create_client():
     client = Client(API_KEY, API_SECRET)
     return client
@@ -45,21 +48,23 @@ def get_user(api_url,auth):
     return r.json()
 
 # https://api.coinbase.com/v2/accounts
+# access different asset wallets
+# each asset is it's own account USDC, Bitcoin, ...
 def get_accounts(api_url,auth):
     r = requests.get(f'{api_url}accounts', auth=auth)
     return r.json()
 
-
+# Returns the permissions for the user's API access
 def get_auth_info(api_url,auth):
     r = requests.get(f'{api_url}user/auth', auth=auth)
     return r.json()
 
-
+# Save account info in json file
 def save_accounts(client):
     with open('coinbase_accounts.json','w') as f:
         json.dump(client.get_accounts(limit=300),f)
 
-
+# Get the transaction data from Coinbase API and save in the database
 def store_transactions_in_db(conn):
     coinbase_id = ''
     transaction_type = ''
@@ -81,19 +86,50 @@ def store_transactions_in_db(conn):
             transaction_date = transaction['updated_at']
             db.add_transaction(conn, coinbase_id, transaction_type,transaction_value,transaction_date)
 
-
-def generate_transaction_email(conn, time_period):
-
-    # need a get_transactions_by_date
-    transactions_obj = db.select_transactions(conn,time_period)
+# generate a pdf report of all tranasaction on the Coinbase Debit Card between the
+# time period passed in
+def generate_transaction_email_pdf(conn, time_period):
+    transaction_obj = db.select_transactions(conn,time_period)
     ammount_spent = 0.0
-    for transaction in transactions_obj:
+    for transaction in transaction_obj:
         if transaction[2] == 'cardspend':
             ammount_spent += float(transaction[3])
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+    curr_date = datetime.now()
+    curr_date = curr_date.strftime("%m-%d-%Y")
+    pdf.cell(200, 10, txt = f'{curr_date} Coinbase Debit Card Transaction Report', ln = 2, align = 'C')
+
+    for transaction in transaction_obj:
+        transaction_type = ''
+        transaction_value = 0.0
+        transaction_date = ''
+
+        if transaction[2] == 'cardspend':
+            transaction_type = 'Withdrawl'
+        elif transaction[2] == 'buy':
+            transaction_type = 'Deposit'
+        elif transaction[2] == 'interest':
+            transaction_type = 'Interest'
+        else:
+            print(f'Untracked transaction type, {transaction[2]}.')
+        transaction_value = transaction[3]
+        transaction_date = transaction[4]
+
+        msg = f'''type: {transaction_type}  
+        ammount: ${transaction_value}  
+        date: {transaction_date}
+        '''
+        pdf.cell(200,10, txt=msg, ln=1, align='L')
+
+    pdf.output(f"transaction_reports/TransactionReport.pdf")
 
 
 if __name__ == '__main__':
     conn = db.connect()
     db.create_table(conn)
     #store_transactions_in_db(conn)
-    generate_transaction_email(conn,7)
+    generate_transaction_email_pdf(conn,7)
+    send_email.send_email_report()

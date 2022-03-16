@@ -2,3 +2,4 @@ requests
 coinbase
 python-dotenv
 psycopg2
+fpdf
