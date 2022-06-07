@@ -128,7 +128,9 @@ def generate_transaction_email_pdf(conn, time_period):
     pdf.output(f"transaction_reports/TransactionReport.pdf")
 
 # Driver function
-# every monday at 6am send transaction report
+# uses hickory to send transaction report every Sunday at 10am PT
+# hickory schedule app.py --every=sunday@10am
+# https://github.com/maxhumber/hickory
 def run():
     conn = db.connect()
     db.create_table(conn)
@@ -136,8 +138,4 @@ def run():
     generate_transaction_email_pdf(conn,7)
     send_email.send_email_report()
 
-schedule.every().monday.at("06:00").do(run)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+run()
